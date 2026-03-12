@@ -1,0 +1,278 @@
+:root {
+  --bg: #050505;
+  --card: #101010;
+  --card-2: #171717;
+  --line: #2b2b2b;
+  --text: #ffffff;
+  --muted: #b7b7b7;
+  --red: #d71920;
+  --gold: #f7c531;
+  --success: #16361f;
+  --success-line: #2e8b57;
+  --error: #3a1717;
+  --error-line: #a83c3c;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  background:
+    radial-gradient(circle at top, rgba(215,25,32,.2), transparent 30%),
+    linear-gradient(180deg, #020202, #0b0b0b);
+  color: var(--text);
+}
+
+.page { min-height: 100vh; }
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px;
+  display: grid;
+  gap: 16px;
+}
+
+.card {
+  background: rgba(16,16,16,.96);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 18px;
+  box-shadow: 0 15px 40px rgba(0,0,0,.25);
+}
+
+.hero {
+  display: grid;
+  gap: 20px;
+  align-items: center;
+}
+
+.hero-copy h1 {
+  margin: 8px 0 10px;
+  font-size: clamp(28px, 4vw, 48px);
+}
+
+.hero-copy p,
+.muted {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.hero-logo-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-logo {
+  max-width: 100%;
+  width: 460px;
+  height: auto;
+  object-fit: contain;
+}
+
+.badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.badge,
+.chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 7px 11px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.badge.red,
+.btn-red,
+.chip {
+  background: var(--red);
+  color: white;
+}
+
+.badge.gold,
+.btn-gold,
+.chip.gold {
+  background: var(--gold);
+  color: black;
+}
+
+.meta-grid,
+.main-grid,
+.filters,
+.admin-login,
+.form-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.meta-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 18px;
+}
+
+.meta-box {
+  background: var(--card-2);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 14px;
+  display: grid;
+  gap: 4px;
+}
+
+.meta-box strong {
+  font-size: 28px;
+  color: var(--gold);
+}
+
+label {
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+}
+
+input,
+select,
+button {
+  font: inherit;
+}
+
+input,
+select {
+  width: 100%;
+  background: #0a0a0a;
+  color: white;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px 14px;
+  min-height: 46px;
+}
+
+input:focus,
+select:focus {
+  outline: 2px solid rgba(247,197,49,.35);
+  border-color: var(--gold);
+}
+
+button {
+  border: 0;
+  cursor: pointer;
+}
+
+.btn {
+  min-height: 46px;
+  border-radius: 14px;
+  padding: 12px 16px;
+  font-weight: 700;
+}
+
+.btn-dark {
+  background: #202020;
+  color: white;
+  border: 1px solid var(--line);
+}
+
+.full { grid-column: 1 / -1; }
+
+.notice {
+  margin-top: 14px;
+  border-radius: 16px;
+  padding: 12px 14px;
+  border: 1px solid;
+}
+
+.notice.success {
+  background: var(--success);
+  border-color: var(--success-line);
+}
+
+.notice.error {
+  background: var(--error);
+  border-color: var(--error-line);
+}
+
+.mail-box,
+.race-card,
+.admin-card {
+  background: var(--card-2);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 14px;
+}
+
+.mail-box pre {
+  white-space: pre-wrap;
+  margin: 0;
+  font-family: Consolas, monospace;
+  font-size: 13px;
+}
+
+.race-list,
+.entry-stack,
+.admin-cards,
+.button-group,
+.checklist {
+  display: grid;
+  gap: 10px;
+}
+
+.race-top,
+.entry-row,
+.admin-top,
+.admin-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.entry-row,
+.detail {
+  color: #dddddd;
+}
+
+.entry-row b,
+.detail b {
+  color: white;
+}
+
+.empty {
+  color: var(--muted);
+  padding: 6px 0;
+}
+
+.checklist {
+  margin: 0;
+  padding-left: 18px;
+  color: #dddddd;
+  line-height: 1.6;
+}
+
+@media (min-width: 900px) {
+  .hero {
+    grid-template-columns: 1.1fr .9fr;
+  }
+
+  .main-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .filters {
+    grid-template-columns: 1fr 1fr auto;
+    align-items: end;
+  }
+
+  .admin-login {
+    grid-template-columns: 1fr 1fr auto;
+    align-items: end;
+  }
+}
