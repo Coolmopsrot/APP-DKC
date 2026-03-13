@@ -1,3 +1,4 @@
+
 create extension if not exists pgcrypto;
 
 create table if not exists public.registrations (
@@ -15,3 +16,17 @@ create table if not exists public.registrations (
 
 create unique index if not exists registrations_unique_race_kartnumber
 on public.registrations (race, lower(kart_number));
+
+alter table public.registrations enable row level security;
+
+create policy "allow read registrations"
+on public.registrations
+for select
+to anon, authenticated
+using (true);
+
+create policy "allow insert registrations"
+on public.registrations
+for insert
+to anon, authenticated
+with check (true);
