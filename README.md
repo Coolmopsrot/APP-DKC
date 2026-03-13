@@ -1,15 +1,16 @@
-# DKC Live Complete Admin
+# DKC Live Admin Pro
 
 ## Enthalten
 - Gaststarter Registrierung
 - Live Dashboard
-- Admin Login
-- DKC Logo
-- Supabase Insert + Select
-- Supabase Auth Login für Admin
+- Admin Pro Login
+- Starter bearbeiten
+- Starter löschen
+- Status ändern
 - CSV Export
-- Filter und Suche
-- Kartnummer nur einmal pro Rennen
+- Filter nach Rennen, Klasse und Status
+- Supabase Insert / Select / Update / Delete
+- DKC Logo
 - Demo-Fallback, wenn Supabase noch nicht verbunden ist
 
 ## Demo Admin Login

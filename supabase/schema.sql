@@ -20,6 +20,8 @@ alter table public.registrations enable row level security;
 
 drop policy if exists "allow read registrations" on public.registrations;
 drop policy if exists "allow insert registrations" on public.registrations;
+drop policy if exists "allow update registrations" on public.registrations;
+drop policy if exists "allow delete registrations" on public.registrations;
 
 create policy "allow read registrations"
 on public.registrations
@@ -32,3 +34,16 @@ on public.registrations
 for insert
 to anon, authenticated
 with check (true);
+
+create policy "allow update registrations"
+on public.registrations
+for update
+to anon, authenticated
+using (true)
+with check (true);
+
+create policy "allow delete registrations"
+on public.registrations
+for delete
+to anon, authenticated
+using (true);
