@@ -44,6 +44,27 @@ async function getSupabaseClient() {
   const { createClient } = await import("@supabase/supabase-js");
   return createClient(url, anonKey);
 }
+
+async function sendConfirmationMail(payload) {
+  const functionsBase = import.meta.env.VITE_SUPABASE_FUNCTIONS_URL;
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  const endpoint = functionsBase || (supabaseUrl ? `${supabaseUrl}/functions/v1` : "");
+  if (!endpoint) return;
+  try {
+    await fetch(`${endpoint}/send-ionos-mail`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(anonKey ? { "Authorization": `Bearer ${anonKey}` } : {}),
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    // Registrierung soll auch dann erfolgreich bleiben, wenn die Mail fehlschlägt.
+  }
+}
+
 export default function App() {
   const [tab, setTab] = useState("registration");
   const [selectedRace, setSelectedRace] = useState("Alle Rennen");
@@ -136,6 +157,17 @@ export default function App() {
       const payload = { race: form.race.trim(), first_name: form.firstName.trim(), last_name: form.lastName.trim(), email: form.email.trim(), kart_number: form.kartNumber.trim(), team_name: form.teamName.trim(), kart_class: form.kartClass.trim(), status: "Bestätigt" };
       const { error } = await supabase.from("registrations").insert(payload);
       if (error) throw error;
+
+      await sendConfirmationMail({
+        email: form.email.trim(),
+        firstName: form.firstName.trim(),
+        lastName: form.lastName.trim(),
+        race: form.race.trim(),
+        kartNumber: form.kartNumber.trim(),
+        teamName: form.teamName.trim(),
+        kartClass: form.kartClass.trim(),
+      });
+
       setFormNotice("Registrierung erfolgreich gespeichert.");
       setForm(emptyForm);
       await loadRegistrations();
