@@ -9,22 +9,9 @@ create table if not exists public.registrations (
   kart_number text not null,
   team_name text not null,
   kart_class text not null,
+  status text default 'Bestätigt',
   created_at timestamptz not null default now()
 );
 
 create unique index if not exists registrations_unique_race_kartnumber
 on public.registrations (race, lower(kart_number));
-
-alter table public.registrations enable row level security;
-
-create policy "public can insert registrations"
-on public.registrations
-for insert
-to anon, authenticated
-with check (true);
-
-create policy "authenticated can read registrations"
-on public.registrations
-for select
-to authenticated
-using (true);

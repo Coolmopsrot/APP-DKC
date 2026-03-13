@@ -1,40 +1,20 @@
-# DKC Anmeldung – finale ZIP
+# DKC Live Dashboard Final
 
-Diese ZIP ist die fertige Frontend-Version für deine DKC-Anmeldung.
+## Enthalten
+- DKC Dashboard in Schwarz / Rot / Gelb
+- Logo im Header
+- Rennübersicht
+- Klassenverteilung
+- Filter
+- Suche
+- CSV-Export
+- Supabase-Liveanbindung vorbereitet
+- Demo-Fallback, wenn noch keine Live-Daten vorhanden sind
 
-## Schon enthalten
-- DKC-Design in Schwarz / Rot / Gelb
-- Handyfreundliches Layout
-- Gaststarter-Formular
-- Felder: Vorname, Nachname, E-Mail, Kartnummer, Teamname, Klasse
-- Rennen für 2026
-- Kartnummer nur einmal pro Rennen
-- Admin-Login in der Demo
-- Admin-Filter nach Rennen und Klasse
-- Excel-Export
-- Starterlisten pro Lauf nach Kartnummer sortiert
-- Logo im public-Ordner
-
-## Demo-Login
-- Benutzername: admin
-- Passwort: kart2026
-
-## Lokal testen
-npm install
-npm run dev
-
-## Für IONOS Deploy Now
+## Build für IONOS
 - Build Command: npm run build
-- Output Folder: dist
+- Output Directory: dist
 
-## Wichtig
-Diese ZIP ist voll funktionsfähig als Frontend-Demo.
-Für echten Live-Betrieb mit Datenbank, echtem Admin-Login und echtem Mailversand musst du noch anbinden:
-- Supabase
-- Resend
-- echte Umgebungsvariablen
-
-Die vorbereiteten Dateien dafür liegen schon in:
-- .env.example
-- supabase/schema.sql
-- supabase/functions/send-confirmation/index.ts
+## Umgebungsvariablen
+VITE_SUPABASE_URL=https://deinprojekt.supabase.co
+VITE_SUPABASE_ANON_KEY=dein_anon_key
