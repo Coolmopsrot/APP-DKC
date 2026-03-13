@@ -52,7 +52,7 @@ async function sendConfirmationMail(payload) {
   const endpoint = functionsBase || (supabaseUrl ? `${supabaseUrl}/functions/v1` : "");
   if (!endpoint) return;
   try {
-    await fetch(`${endpoint}/send-ionos-mail`, {
+    await fetch(`${endpoint}/smart-worker`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
