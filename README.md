@@ -24,3 +24,5 @@ Output Directory: dist
 ## Supabase Variablen
 VITE_SUPABASE_URL=https://deinprojekt.supabase.co
 VITE_SUPABASE_ANON_KEY=dein_anon_key
+
+- Dashboard ohne E-Mail-Anzeige

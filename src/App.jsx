@@ -334,7 +334,7 @@ export default function App() {
                   <label><span className="small">Suche</span><div className="searchwrap"><Search className="searchicon" size={16} /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Name, Team, Nr." /></div></label>
                 </div>
                 <div className="stack">
-                  {filteredRegistrations.map((entry) => <motion.div key={entry.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="entry-card"><div className="row entry-top"><div><div className="entry-name">#{entry.kartNumber} · {entry.firstName} {entry.lastName}</div><div className="muted small">{entry.race}</div></div><div className="badges"><span className="pill gold">{entry.kartClass}</span><span className={`pill ${entry.status === "Bestätigt" ? "ok" : entry.status === "Bezahlt" ? "blue" : "dark"}`}>{entry.status}</span></div></div><div className="detail-grid small"><div>Team: <strong>{entry.teamName}</strong></div><div>E-Mail: <strong>{entry.email || "-"}</strong></div></div></motion.div>)}
+                  {filteredRegistrations.map((entry) => <motion.div key={entry.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="entry-card"><div className="row entry-top"><div><div className="entry-name">#{entry.kartNumber} · {entry.firstName} {entry.lastName}</div><div className="muted small">{entry.race}</div></div><div className="badges"><span className="pill gold">{entry.kartClass}</span><span className={`pill ${entry.status === "Bestätigt" ? "ok" : entry.status === "Bezahlt" ? "blue" : "dark"}`}>{entry.status}</span></div></div><div className="detail-grid small"><div>Team: <strong>{entry.teamName}</strong></div></div></motion.div>)}
                   {!isLoading && filteredRegistrations.length === 0 && <div className="emptybox">Keine passenden Starter gefunden.</div>}
                   {isLoading && <div className="emptybox">Live-Daten werden geladen...</div>}
                 </div>
@@ -371,7 +371,7 @@ export default function App() {
                   return <div key={entry.id} className="entry-card">
                     {!editing ? <>
                       <div className="row entry-top"><div><div className="entry-name">#{entry.kartNumber} · {entry.firstName} {entry.lastName}</div><div className="muted small">{entry.race}</div></div><div className="badges"><span className="pill gold">{entry.kartClass}</span><span className={`pill ${entry.status === "Bestätigt" ? "ok" : entry.status === "Bezahlt" ? "blue" : "dark"}`}>{entry.status}</span></div></div>
-                      <div className="detail-grid small"><div>E-Mail: <strong>{entry.email || "-"}</strong></div><div>Team: <strong>{entry.teamName}</strong></div><div>Registriert: <strong>{entry.createdAt ? new Date(entry.createdAt).toLocaleString("de-DE") : "-"}</strong></div></div>
+                      <div className="detail-grid small"><div>Team: <strong>{entry.teamName}</strong></div><div>Registriert: <strong>{entry.createdAt ? new Date(entry.createdAt).toLocaleString("de-DE") : "-"}</strong></div></div>
                       <div className="action-row">
                         <button onClick={() => startEdit(entry)} className="btn darkbtn smallbtn"><Pencil size={16} /> Bearbeiten</button>
                         <button onClick={() => deleteStarter(entry.id)} className="btn redbtn smallbtn"><Trash2 size={16} /> Löschen</button>
