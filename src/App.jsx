@@ -46,7 +46,7 @@ async function getSupabaseClient() {
 }
 
 async function sendConfirmationMail(payload) {
-  const functionsBase = https://rylwnuxazfdkwolkogqr.supabase.co/functions/v1;
+  const functionsBase = "https://rylwnuxazfdkwolkogqr.supabase.co/functions/v1";
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
   const endpoint = functionsBase || (supabaseUrl ? `${supabaseUrl}/functions/v1` : "");
