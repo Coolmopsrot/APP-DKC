@@ -176,7 +176,7 @@ export default function App(){
   return (
     <div className="page"><div className="container space-y-6">
       <motion.div initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} className="hero-grid">
-        <div className="card"><div className="badges"><span className="pill red">DKC 2026</span><span className="pill gold">Live App Komplett</span><span className="pill dark">{sourceLabel}</span></div><div className="hero-content"><img className="hero-logo" src="/dkc-logo.png" alt="DKC Logo" /><div><h1>Deutsche Kartchallenge</h1>
+       <div className="card"><div className="badges"><span className="pill red">DKC 2026</span><span className="pill gold">Live App Komplett</span><span className="pill dark">{sourceLabel}</span></div><div className="hero-content"><img className="hero-logo" src="/dkc-logo.png" alt="DKC Logo" /><div><h1>Deutsche Kartchallenge</h1></div></div></div>
         <div className="card"><div className="section-title"><ShieldCheck size={18} color="#facc15" /> Live Status</div><div className="stack"><div className="rowbox"><span><Database size={16} color="#ef4444" /> Datenquelle</span><strong>{sourceLabel}</strong></div><button onClick={loadAllData} className="rowbtn"><span><RefreshCw size={16} color="#facc15" /> Daten neu laden</span><span className="muted">{isLoading?"lädt...":"jetzt"}</span></button><div className="rowbox">{adminLoggedIn?"Admin eingeloggt":"Admin nicht eingeloggt"}</div></div></div>
       </motion.div>
 
