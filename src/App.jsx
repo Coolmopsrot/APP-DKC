@@ -45,11 +45,19 @@ function exportTireCsv(rows){
 async function getSupabaseClient(){ const url=import.meta.env.VITE_SUPABASE_URL; const anonKey=import.meta.env.VITE_SUPABASE_ANON_KEY; if(!url||!anonKey) return null; const { createClient } = await import("@supabase/supabase-js"); return createClient(url, anonKey);}
 
 async function sendTireOrderMail(payload){
-  const supabase = await getSupabaseClient();
-  if(!supabase) return;
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  if(!supabaseUrl || !anonKey) return { ok:false, error:"Supabase nicht konfiguriert" };
+
   try{
-    await supabase.functions.invoke("smart-worker", {
-      body: {
+    const response = await fetch(`${supabaseUrl}/functions/v1/smart-worker`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${anonKey}`,
+        "apikey": anonKey,
+      },
+      body: JSON.stringify({
         email: payload.email,
         firstName: payload.firstName,
         lastName: payload.lastName,
@@ -57,9 +65,18 @@ async function sendTireOrderMail(payload){
         kartNumber: "-",
         teamName: `Reifenbestellung: ${payload.quantity} x Mojo D5`,
         kartClass: "Mojo D5 Reifenbestellung",
-      }
+      }),
     });
-  }catch{}
+
+    if(!response.ok){
+      const text = await response.text();
+      return { ok:false, error:text || `HTTP ${response.status}` };
+    }
+
+    return { ok:true };
+  }catch(error){
+    return { ok:false, error:String(error) };
+  }
 }
 
 export default function App(){
@@ -221,7 +238,7 @@ export default function App(){
       });
       if(error) throw error;
 
-      await sendTireOrderMail({
+      const mailResult = await sendTireOrderMail({
         race: tireForm.race,
         firstName: tireForm.firstName.trim(),
         lastName: tireForm.lastName.trim(),
@@ -231,7 +248,7 @@ export default function App(){
 
       setTireForm(emptyTireForm);
       await loadAllData();
-      setTireNotice("Reifenbestellung erfolgreich gespeichert.");
+      setTireNotice(mailResult.ok ? "Reifenbestellung erfolgreich gespeichert. Die Bestätigungsmail wurde versendet." : "Reifenbestellung erfolgreich gespeichert. Die Bestätigungsmail konnte aktuell nicht versendet werden.");
     }catch(err){
       setTireError(err?.message || "Reifenbestellung konnte nicht gespeichert werden.");
     }finally{
