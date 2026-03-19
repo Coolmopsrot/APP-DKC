@@ -86,3 +86,20 @@ on public.tire_orders
 for insert
 to anon, authenticated
 with check (true);
+
+
+drop policy if exists "allow update tire orders" on public.tire_orders;
+drop policy if exists "allow delete tire orders" on public.tire_orders;
+
+create policy "allow update tire orders"
+on public.tire_orders
+for update
+to anon, authenticated
+using (true)
+with check (true);
+
+create policy "allow delete tire orders"
+on public.tire_orders
+for delete
+to anon, authenticated
+using (true);

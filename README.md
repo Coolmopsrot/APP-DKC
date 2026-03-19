@@ -29,5 +29,3 @@ VITE_SUPABASE_ANON_KEY=dein_anon_key
 
 - Mojo D5 Reifenbestellung pro Lauf
 - Bestätigungsmail über die konfigurierte Mail-Function
-
-- Summen pro Lauf für Reifenbestellungen
