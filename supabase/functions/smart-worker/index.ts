@@ -20,17 +20,7 @@ serve(async (req) => {
       });
     }
 
-    const {
-      type,
-      email,
-      firstName,
-      lastName,
-      race,
-      kartNumber,
-      teamName,
-      kartClass,
-      quantity,
-    } = await req.json();
+    const { type, email, firstName, lastName, race, kartNumber, teamName, kartClass, quantity } = await req.json();
 
     const smtpUser = Deno.env.get("IONOS_SMTP_USER");
     const smtpPass = Deno.env.get("IONOS_SMTP_PASS");
@@ -57,57 +47,19 @@ serve(async (req) => {
     let subject = "";
     let html = "";
 
-    const primary = "#e10600";
-    const dark = "#111";
-    const gold = "#facc15";
-
     if (type === "registration") {
       subject = "🏁 Deine Anmeldung zur DKC wurde bestätigt";
-      html = `
-      <div style="font-family:Arial,sans-serif;background:${dark};color:#fff;padding:20px">
-        <div style="max-width:600px;margin:auto;background:#1a1a1a;border-radius:10px;overflow:hidden">
-          <div style="background:${primary};padding:15px;text-align:center;font-size:20px;font-weight:bold">🏁 Deutsche Kartchallenge</div>
-          <div style="padding:20px">
-            <h2 style="color:${gold}">Anmeldung bestätigt</h2>
-            <p>Hallo <strong>${firstName} ${lastName}</strong>,</p>
-            <p>du bist erfolgreich für folgendes Rennen registriert:</p>
-            <table style="width:100%;margin-top:15px">
-              <tr><td><strong>Rennen:</strong></td><td>${race}</td></tr>
-              <tr><td><strong>Kartnummer:</strong></td><td>${kartNumber}</td></tr>
-              <tr><td><strong>Team:</strong></td><td>${teamName}</td></tr>
-              <tr><td><strong>Klasse:</strong></td><td>${kartClass}</td></tr>
-            </table>
-            <p style="margin-top:20px">Wir wünschen dir viel Erfolg und spannende Rennen! 🏎️</p>
-            <div style="margin-top:20px;font-size:12px;color:#aaa">DKC – Deutsche Kartchallenge</div>
-          </div>
-        </div>
-      </div>`;
+      html = `<div style="font-family:Arial,sans-serif;background:#111111;color:#ffffff;padding:20px"><div style="max-width:600px;margin:auto;background:#1a1a1a;border-radius:10px;overflow:hidden"><div style="background:#e10600;padding:15px;text-align:center;font-size:20px;font-weight:bold;color:#ffffff">🏁 Deutsche Kartchallenge</div><div style="padding:20px"><h2 style="color:#facc15;margin-top:0;">Anmeldung bestätigt</h2><p style="color:#ffffff;">Hallo <strong>${firstName || "-"} ${lastName || ""}</strong>,</p><p style="color:#ffffff;">du bist erfolgreich für folgendes Rennen registriert:</p><div style="margin-top:18px;background:#f3f4f6;border-radius:8px;padding:14px;color:#111111;"><p style="margin:0 0 8px 0;"><strong>Rennen:</strong> ${race || "-"}</p><p style="margin:0 0 8px 0;"><strong>Kartnummer:</strong> ${kartNumber || "-"}</p><p style="margin:0 0 8px 0;"><strong>Team:</strong> ${teamName || "-"}</p><p style="margin:0;"><strong>Klasse:</strong> ${kartClass || "-"}</p></div><p style="margin-top:20px;color:#ffffff;">Wir wünschen dir viel Erfolg und spannende Rennen! 🏎️</p><div style="margin-top:20px;font-size:12px;color:#aaaaaa">DKC – Deutsche Kartchallenge</div></div></div></div>`;
     } else if (type === "tires") {
       subject = "🛞 Deine Reifenbestellung wurde bestätigt";
-      html = `
-      <div style="font-family:Arial,sans-serif;background:${dark};color:#fff;padding:20px">
-        <div style="max-width:600px;margin:auto;background:#1a1a1a;border-radius:10px;overflow:hidden">
-          <div style="background:${primary};padding:15px;text-align:center;font-size:20px;font-weight:bold">🏁 Deutsche Kartchallenge</div>
-          <div style="padding:20px">
-            <h2 style="color:${gold}">Reifenbestellung bestätigt</h2>
-            <p>Hallo <strong>${firstName} ${lastName}</strong>,</p>
-            <p>deine Bestellung wurde erfolgreich aufgenommen:</p>
-            <table style="width:100%;margin-top:15px">
-              <tr><td><strong>Rennen:</strong></td><td>${race}</td></tr>
-              <tr><td><strong>Reifen:</strong></td><td>${quantity} x Mojo D5</td></tr>
-            </table>
-            <p style="margin-top:20px">Deine Reifen stehen am Renntag für dich bereit.</p>
-            <div style="margin-top:20px;font-size:12px;color:#aaa">DKC – Deutsche Kartchallenge</div>
-          </div>
-        </div>
-      </div>`;
+      html = `<div style="font-family:Arial,sans-serif;background:#111111;color:#ffffff;padding:20px"><div style="max-width:600px;margin:auto;background:#1a1a1a;border-radius:10px;overflow:hidden"><div style="background:#e10600;padding:15px;text-align:center;font-size:20px;font-weight:bold;color:#ffffff">🏁 Deutsche Kartchallenge</div><div style="padding:20px"><h2 style="color:#facc15;margin-top:0;">Reifenbestellung bestätigt</h2><p style="color:#ffffff;">Hallo <strong>${firstName || "-"} ${lastName || ""}</strong>,</p><p style="color:#ffffff;">deine Bestellung wurde erfolgreich aufgenommen:</p><div style="margin-top:18px;background:#f3f4f6;border-radius:8px;padding:14px;color:#111111;"><p style="margin:0 0 8px 0;"><strong>Rennen:</strong> ${race || "-"}</p><p style="margin:0;"><strong>Reifen:</strong> ${Number(quantity) || "-"} x Mojo D5</p></div><p style="margin-top:20px;color:#ffffff;">Deine Reifen stehen am Renntag für dich bereit.</p><div style="margin-top:20px;font-size:12px;color:#aaaaaa">DKC – Deutsche Kartchallenge</div></div></div></div>`;
     } else {
       subject = "DKC Benachrichtigung";
-      html = `<p>Hallo ${firstName} ${lastName},</p><p>deine Anfrage wurde verarbeitet.</p>`;
+      html = `<div style="font-family:Arial,sans-serif;padding:20px;color:#111111;"><p>Hallo ${firstName || "-"} ${lastName || ""},</p><p>deine Anfrage wurde verarbeitet.</p></div>`;
     }
 
     await transporter.sendMail({
-      from: `"${fromName}" <${fromMail}>`,
+      from: \`"\${fromName}" <\${fromMail}>\`,
       to: email,
       subject,
       html,
@@ -115,9 +67,9 @@ serve(async (req) => {
 
     if (adminMail) {
       await transporter.sendMail({
-        from: `"${fromName}" <${fromMail}>`,
+        from: \`"\${fromName}" <\${fromMail}>\`,
         to: adminMail,
-        subject: `[Admin-Kopie] ${subject}`,
+        subject: \`[Admin-Kopie] \${subject}\`,
         html,
       });
     }

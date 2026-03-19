@@ -32,15 +32,5 @@ VITE_SUPABASE_ANON_KEY=dein_anon_key
 
 - Mail-Fix für Reifenbestellung über direkte Edge-Function `smart-worker`
 
-- Mail-Fix für Gaststarterregistrierung über direkte Edge-Function `smart-worker`
-
-
-## Profi-Mail Trennung
-Diese Version sendet unterschiedliche Mailtexte für:
-- Gaststarterregistrierung (`type: "registration"`)
-- Reifenbestellung (`type: "tires"`)
-
-Wichtig:
-Die Supabase Edge Function `smart-worker` muss durch die Datei
-`supabase/functions/smart-worker/index.ts`
-aus dieser ZIP ersetzt und neu deployed werden.
+- Quantity-Fix für Reifen-Mail enthalten
+- smart-worker Vorlage mit getrennten Profi-Mails enthalten
