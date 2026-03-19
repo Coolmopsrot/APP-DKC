@@ -1,7 +1,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Trophy, Users, Gauge, Filter, CalendarDays, Download, ShieldCheck, Search, BarChart3, Database, RefreshCw, ClipboardCheck, LayoutDashboard, Lock, LogOut, Pencil, Trash2, Save, X, BadgeCheck, FolderOpen, Upload, FileText } from "lucide-react";
+import { Trophy, Users, Gauge, Filter, CalendarDays, Download, ShieldCheck, Search, BarChart3, Database, RefreshCw, ClipboardCheck, LayoutDashboard, Lock, LogOut, Pencil, Trash2, Save, X, BadgeCheck, FolderOpen, Upload, FileText, ShoppingCart } from "lucide-react";
 
 const races = ["1. Lauf – 26.04.26 – Lohsa","2. Lauf – 17.05.26 – Belleben","3. Lauf – 21.06.26 – Mülsen","4. Lauf – 13.09.26 – Nachtrennen Belleben","5. Lauf – 27.09.26 – Cheb","6. Lauf – 11.10.26 – Wallrav"];
 const classes = ["Rotax Senior","Rotax Junior","Rotax Mini","Rotax Micro","Rotax DD2","Rotax DD2 Master","Rotax DD2 Trophy","FUN Klasse"];
@@ -16,6 +16,11 @@ const demoDocuments = [
   { id: 1, title: "Reglement 2026", category: "Reglement", race: "Alle Rennen", fileName: "reglement-2026.pdf", filePath: "demo/reglement-2026.pdf", publicUrl: "#", createdAt: "2026-01-10T09:00:00.000Z" },
   { id: 2, title: "Ausschreibung Lohsa", category: "Ausschreibung", race: races[0], fileName: "ausschreibung-lohsa.pdf", filePath: "demo/ausschreibung-lohsa.pdf", publicUrl: "#", createdAt: "2026-01-15T10:00:00.000Z" },
 ];
+const demoTireOrders = [
+  { id: 1, race: races[0], firstName: "Andy", lastName: "Zenner", email: "andy_zenner@web.de", quantity: 2, createdAt: "2026-02-05T10:00:00.000Z" },
+  { id: 2, race: races[1], firstName: "Max", lastName: "Beispiel", email: "max@example.com", quantity: 1, createdAt: "2026-02-06T11:00:00.000Z" },
+];
+const emptyTireForm = { race: races[0], firstName: "", lastName: "", email: "", quantity: 1 };
 const emptyForm = { race: races[0], firstName: "", lastName: "", email: "", kartNumber: "", teamName: "", kartClass: "" };
 const emptyDocumentForm = { title: "", category: documentCategories[0], race: "Alle Rennen", file: null };
 
@@ -23,6 +28,24 @@ function numericKart(value){ const n = Number(String(value).replace(/[^\d]/g,"")
 function sortByKart(data){ return [...data].sort((a,b)=>{ const aNum=numericKart(a.kartNumber); const bNum=numericKart(b.kartNumber); if(aNum!==null&&bNum!==null&&aNum!==bNum) return aNum-bNum; return String(a.kartNumber).localeCompare(String(b.kartNumber),"de");});}
 function exportToCsv(rows){ const csvHeader=["Rennen","Vorname","Nachname","Kartnummer","Teamname","Klasse","Status","E-Mail","Registriert am"]; const csvRows=rows.map((item)=>[item.race,item.firstName,item.lastName,item.kartNumber,item.teamName,item.kartClass,item.status,item.email||"",item.createdAt?new Date(item.createdAt).toLocaleString("de-DE"):""]); const content=[csvHeader,...csvRows].map((row)=>row.map((cell)=>`"${String(cell).replace(/"/g,'""')}"`).join(";")).join("\n"); const blob=new Blob([content],{type:"text/csv;charset=utf-8;"}); const url=URL.createObjectURL(blob); const link=document.createElement("a"); link.href=url; link.download="DKC-Starterliste.csv"; link.click(); URL.revokeObjectURL(url);}
 async function getSupabaseClient(){ const url=import.meta.env.VITE_SUPABASE_URL; const anonKey=import.meta.env.VITE_SUPABASE_ANON_KEY; if(!url||!anonKey) return null; const { createClient } = await import("@supabase/supabase-js"); return createClient(url, anonKey);}
+
+async function sendTireOrderMail(payload){
+  const supabase = await getSupabaseClient();
+  if(!supabase) return;
+  try{
+    await supabase.functions.invoke("smart-worker", {
+      body: {
+        email: payload.email,
+        firstName: payload.firstName,
+        lastName: payload.lastName,
+        race: payload.race,
+        kartNumber: "-",
+        teamName: `Reifenbestellung: ${payload.quantity} x Mojo D5`,
+        kartClass: "Mojo D5 Reifenbestellung",
+      }
+    });
+  }catch{}
+}
 
 export default function App(){
   const [tab,setTab]=useState("registration");
@@ -52,6 +75,11 @@ export default function App(){
   const [documentSearch,setDocumentSearch]=useState("");
   const [documentNotice,setDocumentNotice]=useState("");
   const [isUploadingDocument,setIsUploadingDocument]=useState(false);
+  const [tireOrders,setTireOrders]=useState(demoTireOrders);
+  const [tireForm,setTireForm]=useState(emptyTireForm);
+  const [tireNotice,setTireNotice]=useState("");
+  const [tireError,setTireError]=useState("");
+  const [isSubmittingTire,setIsSubmittingTire]=useState(false);
 
   useEffect(()=>{ loadAllData(); restoreSession(); },[]);
 
@@ -60,18 +88,26 @@ export default function App(){
     setIsLoading(true); setLoadError("");
     try{
       const supabase=await getSupabaseClient();
-      if(!supabase){ setRegistrations(demoRegistrations); setDocuments(demoDocuments); setSourceLabel("Demo Daten"); setIsLoading(false); return; }
-      const [{ data: regData, error: regError }, { data: docData, error: docError }] = await Promise.all([
+      if(!supabase){
+        setRegistrations(demoRegistrations); setDocuments(demoDocuments); setTireOrders(demoTireOrders); setSourceLabel("Demo Daten"); setIsLoading(false); return;
+      }
+      const results = await Promise.all([
         supabase.from("registrations").select("*").order("created_at",{ascending:false}),
         supabase.from("documents").select("*").order("created_at",{ascending:false}),
+        supabase.from("tire_orders").select("*").order("created_at",{ascending:false}),
       ]);
-      if(regError) throw regError;
-      if(docError) throw docError;
-      setRegistrations((regData||[]).map((item,index)=>({ id:item.id||index+1, race:item.race, firstName:item.first_name, lastName:item.last_name, kartNumber:item.kart_number, teamName:item.team_name, kartClass:item.kart_class, email:item.email, createdAt:item.created_at, status:item.status||"Bestätigt" })));
-      setDocuments((docData||[]).map((item,index)=>({ id:item.id||index+1, title:item.title, category:item.category, race:item.race||"Alle Rennen", fileName:item.file_name, filePath:item.file_path, publicUrl:item.public_url, createdAt:item.created_at })));
+      const regRes = results[0];
+      const docRes = results[1];
+      const tireRes = results[2];
+      if(regRes.error) throw regRes.error;
+      if(docRes.error) throw docRes.error;
+      if(tireRes.error) throw tireRes.error;
+      setRegistrations((regRes.data||[]).map((item,index)=>({ id:item.id||index+1, race:item.race, firstName:item.first_name, lastName:item.last_name, kartNumber:item.kart_number, teamName:item.team_name, kartClass:item.kart_class, email:item.email, createdAt:item.created_at, status:item.status||"Bestätigt" })));
+      setDocuments((docRes.data||[]).map((item,index)=>({ id:item.id||index+1, title:item.title, category:item.category, race:item.race||"Alle Rennen", fileName:item.file_name, filePath:item.file_path, publicUrl:item.public_url, createdAt:item.created_at })));
+      setTireOrders((tireRes.data||[]).map((item,index)=>({ id:item.id||index+1, race:item.race, firstName:item.first_name, lastName:item.last_name, email:item.email, quantity:item.quantity, createdAt:item.created_at })));
       setSourceLabel("Supabase Live Daten");
     }catch(err){
-      setRegistrations(demoRegistrations); setDocuments(demoDocuments); setSourceLabel("Demo Daten"); setLoadError("Live-Daten konnten noch nicht geladen werden. Aktuell wird die Demo angezeigt.");
+      setRegistrations(demoRegistrations); setDocuments(demoDocuments); setTireOrders(demoTireOrders); setSourceLabel("Demo Daten"); setLoadError("Live-Daten konnten noch nicht geladen werden. Aktuell wird die Demo angezeigt.");
     }finally{ setIsLoading(false); }
   }
 
@@ -138,6 +174,54 @@ export default function App(){
   }
 
   function handleDocumentField(key,value){ setDocumentForm((prev)=>({...prev,[key]:value})); }
+
+  function handleTireField(key,value){ setTireForm((prev)=>({...prev,[key]:value})); }
+
+  async function submitTireOrder(e){
+    e.preventDefault(); setTireNotice(""); setTireError("");
+    if(!tireForm.firstName.trim() || !tireForm.lastName.trim() || !tireForm.email.trim()) return setTireError("Bitte Vorname, Nachname und E-Mail ausfüllen.");
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(tireForm.email.trim())) return setTireError("Bitte gib eine gültige E-Mail-Adresse ein.");
+    const quantity = Number(tireForm.quantity);
+    if(!Number.isInteger(quantity) || quantity < 1 || quantity > 10) return setTireError("Bitte eine Anzahl von 1 bis 10 Reifensätzen angeben.");
+
+    const supabase=await getSupabaseClient();
+    setIsSubmittingTire(true);
+    try{
+      if(!supabase){
+        const newOrder = { id: Date.now(), race: tireForm.race, firstName: tireForm.firstName.trim(), lastName: tireForm.lastName.trim(), email: tireForm.email.trim(), quantity, createdAt: new Date().toISOString() };
+        setTireOrders((prev)=>[newOrder, ...prev]);
+        setTireForm(emptyTireForm);
+        setTireNotice("Demo-Modus: Reifenbestellung gespeichert.");
+        return;
+      }
+
+      const { error } = await supabase.from("tire_orders").insert({
+        race: tireForm.race,
+        first_name: tireForm.firstName.trim(),
+        last_name: tireForm.lastName.trim(),
+        email: tireForm.email.trim(),
+        quantity,
+      });
+      if(error) throw error;
+
+      await sendTireOrderMail({
+        race: tireForm.race,
+        firstName: tireForm.firstName.trim(),
+        lastName: tireForm.lastName.trim(),
+        email: tireForm.email.trim(),
+        quantity,
+      });
+
+      setTireForm(emptyTireForm);
+      await loadAllData();
+      setTireNotice("Reifenbestellung erfolgreich gespeichert.");
+    }catch(err){
+      setTireError(err?.message || "Reifenbestellung konnte nicht gespeichert werden.");
+    }finally{
+      setIsSubmittingTire(false);
+    }
+  }
+
   async function uploadDocument(e){
     e.preventDefault(); setDocumentNotice("");
     if(!documentForm.title.trim()||!documentForm.category.trim()||!documentForm.file) return setDocumentNotice("Bitte Titel, Kategorie und Datei auswählen.");
@@ -169,6 +253,7 @@ export default function App(){
 
   const filteredRegistrations=useMemo(()=>sortByKart(registrations.filter((entry)=>{ const matchesRace=selectedRace==="Alle Rennen"||entry.race===selectedRace; const matchesClass=selectedClass==="Alle Klassen"||entry.kartClass===selectedClass; const matchesStatus=statusFilter==="Alle Status"||entry.status===statusFilter; const query=search.toLowerCase(); const matchesSearch=!query||`${entry.firstName} ${entry.lastName}`.toLowerCase().includes(query)||entry.teamName.toLowerCase().includes(query)||entry.kartNumber.toLowerCase().includes(query); return matchesRace&&matchesClass&&matchesStatus&&matchesSearch; })),[registrations,selectedRace,selectedClass,statusFilter,search]);
   const filteredDocuments=useMemo(()=>documents.filter((doc)=>{ const matchesCategory=documentFilterCategory==="Alle Kategorien"||doc.category===documentFilterCategory; const matchesRace=documentFilterRace==="Alle Rennen"||doc.race===documentFilterRace; const query=documentSearch.toLowerCase(); const matchesSearch=!query||doc.title.toLowerCase().includes(query)||doc.fileName.toLowerCase().includes(query)||doc.category.toLowerCase().includes(query); return matchesCategory&&matchesRace&&matchesSearch; }),[documents,documentFilterCategory,documentFilterRace,documentSearch]);
+  const filteredTireOrders=useMemo(()=>tireOrders.filter((item)=>{ const matchesRace=selectedRace==="Alle Rennen"||item.race===selectedRace; const query=search.toLowerCase(); const matchesSearch=!query||`${item.firstName} ${item.lastName}`.toLowerCase().includes(query)||String(item.quantity).includes(query); return matchesRace&&matchesSearch; }),[tireOrders,selectedRace,search]);
   const stats=useMemo(()=>({ total:registrations.length, confirmed:registrations.filter((r)=>r.status==="Bestätigt").length, open:registrations.filter((r)=>r.status==="Offen").length, classesCount:new Set(registrations.map((r)=>r.kartClass)).size }),[registrations]);
   const raceStats=useMemo(()=>races.map((race)=>({ race, count:registrations.filter((r)=>r.race===race).length })),[registrations]);
   const classStats=useMemo(()=>classes.map((item)=>({ name:item, count:registrations.filter((r)=>r.kartClass===item).length })).filter((item)=>item.count>0).sort((a,b)=>b.count-a.count),[registrations]);
@@ -176,7 +261,7 @@ export default function App(){
   return (
     <div className="page"><div className="container space-y-6">
       <motion.div initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} className="hero-grid">
-       <div className="card"><div className="badges"><span className="pill red">DKC 2026</span><span className="pill gold">Live App Komplett</span><span className="pill dark">{sourceLabel}</span></div><div className="hero-content"><img className="hero-logo" src="/dkc-logo.png" alt="DKC Logo" /><div><h1>Deutsche Kartchallenge</h1></div></div></div>
+        <div className="card"><div className="badges"><span className="pill red">DKC 2026</span><span className="pill gold">Live App Komplett</span><span className="pill dark">{sourceLabel}</span></div><div className="hero-content"><img className="hero-logo" src="/dkc-logo.png" alt="DKC Logo" /><div><h1>Deutsche Kartchallenge</h1><p className="muted">Komplette Live-Version mit Registrierung, Dashboard, Admin Pro und Dokumentenbereich.</p></div></div></div>
         <div className="card"><div className="section-title"><ShieldCheck size={18} color="#facc15" /> Live Status</div><div className="stack"><div className="rowbox"><span><Database size={16} color="#ef4444" /> Datenquelle</span><strong>{sourceLabel}</strong></div><button onClick={loadAllData} className="rowbtn"><span><RefreshCw size={16} color="#facc15" /> Daten neu laden</span><span className="muted">{isLoading?"lädt...":"jetzt"}</span></button><div className="rowbox">{adminLoggedIn?"Admin eingeloggt":"Admin nicht eingeloggt"}</div></div></div>
       </motion.div>
 
@@ -185,6 +270,7 @@ export default function App(){
         <button className={`tabbtn ${tab==="dashboard"?"active":""}`} onClick={()=>setTab("dashboard")}><LayoutDashboard size={16} /> Dashboard</button>
         <button className={`tabbtn ${tab==="admin"?"active":""}`} onClick={()=>setTab("admin")}><Lock size={16} /> Admin Pro</button>
         <button className={`tabbtn ${tab==="documents"?"active":""}`} onClick={()=>setTab("documents")}><FolderOpen size={16} /> Dokumente</button>
+        <button className={`tabbtn ${tab==="tires"?"active":""}`} onClick={()=>setTab("tires")}><ShoppingCart size={16} /> Reifenbestellung</button>
       </div>
 
       {loadError&&<div className="warn">{loadError}</div>}
@@ -192,6 +278,8 @@ export default function App(){
       {formError&&<div className="error">{formError}</div>}
       {adminNotice&&<div className="warn">{adminNotice}</div>}
       {documentNotice&&<div className="warn">{documentNotice}</div>}
+      {tireNotice&&<div className="success">{tireNotice}</div>}
+      {tireError&&<div className="error">{tireError}</div>}
 
       {tab==="registration"&&<div className="form-wrap">
         <div className="card"><div className="section-title"><ClipboardCheck size={18} color="#facc15" /> Gaststarter Registrierung</div><form onSubmit={submitRegistration} className="form-grid">
@@ -253,6 +341,38 @@ export default function App(){
         </div>
         <div className="card"><div className="section-title"><Upload size={18} color="#facc15" /> Dokumente hochladen</div><form onSubmit={uploadDocument} className="form-grid"><label><span className="small">Titel</span><input value={documentForm.title} onChange={(e)=>handleDocumentField("title",e.target.value)} placeholder="z. B. Reglement 2026" /></label><label><span className="small">Kategorie</span><select value={documentForm.category} onChange={(e)=>handleDocumentField("category",e.target.value)}>{documentCategories.map((item)=><option key={item}>{item}</option>)}</select></label><label><span className="small">Rennen</span><select value={documentForm.race} onChange={(e)=>handleDocumentField("race",e.target.value)}><option>Alle Rennen</option>{races.map((race)=><option key={race}>{race}</option>)}</select></label><label><span className="small">Datei</span><input type="file" onChange={(e)=>handleDocumentField("file",e.target.files?.[0]||null)} /></label><button type="submit" className="btn redbtn full" disabled={isUploadingDocument}>{isUploadingDocument?"lädt hoch...":"Dokument hochladen"}</button></form></div>
       </motion.div>)}
+
+
+      {tab==="tires"&&<motion.div initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} className="space-y-6">
+        <div className="form-wrap">
+          <div className="card">
+            <div className="section-title"><ShoppingCart size={18} color="#facc15" /> Mojo D5 Reifenbestellung</div>
+            <form onSubmit={submitTireOrder} className="form-grid">
+              <label><span className="small">Lauf</span><select value={tireForm.race} onChange={(e)=>handleTireField("race",e.target.value)}>{races.map((race)=><option key={race} value={race}>{race}</option>)}</select></label>
+              <label><span className="small">Anzahl Mojo D5 Reifensätze</span><input type="number" min="1" max="10" value={tireForm.quantity} onChange={(e)=>handleTireField("quantity",e.target.value)} /></label>
+              <label><span className="small">Vorname</span><input value={tireForm.firstName} onChange={(e)=>handleTireField("firstName",e.target.value)} /></label>
+              <label><span className="small">Nachname</span><input value={tireForm.lastName} onChange={(e)=>handleTireField("lastName",e.target.value)} /></label>
+              <label className="full"><span className="small">E-Mail</span><input type="email" value={tireForm.email} onChange={(e)=>handleTireField("email",e.target.value)} /></label>
+              <button type="submit" className="btn redbtn full" disabled={isSubmittingTire}>{isSubmittingTire?"speichert...":"Reifen bestellen"}</button>
+            </form>
+          </div>
+          <div className="card">
+            <div className="section-title"><FileText size={18} color="#facc15" /> Hinweis</div>
+            <div className="stack">
+              <div className="rowbox">Bestellt werden können Mojo D5 Reifensätze pro Lauf.</div>
+              <div className="rowbox">Nach erfolgreicher Bestellung wird eine Bestätigung an die eingetragene E-Mail-Adresse gesendet.</div>
+            </div>
+          </div>
+        </div>
+
+        {adminLoggedIn&&<div className="card">
+          <div className="toolbar"><div><div className="section-title"><ShoppingCart size={18} color="#facc15" /> Reifenbestellungen Übersicht</div><p className="muted small">Alle Bestellungen pro Lauf für den Admin.</p></div></div>
+          <div className="stack">
+            {filteredTireOrders.map((item)=><div key={item.id} className="entry-card"><div className="row entry-top"><div><div className="entry-name">{item.firstName} {item.lastName}</div><div className="muted small">{item.race}</div></div><div className="badges"><span className="pill gold">{item.quantity} x Mojo D5</span></div></div><div className="detail-grid small"><div>E-Mail: <strong>{item.email}</strong></div><div>Bestellt: <strong>{item.createdAt?new Date(item.createdAt).toLocaleString("de-DE"):"-"}</strong></div></div></div>)}
+            {filteredTireOrders.length===0&&<div className="emptybox">Keine Reifenbestellungen vorhanden.</div>}
+          </div>
+        </div>}
+      </motion.div>}
 
       {tab==="documents"&&<motion.div initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} className="space-y-6"><div className="card"><div className="toolbar"><div><div className="section-title"><FolderOpen size={18} color="#facc15" /> Dokumente & Downloads</div><p className="muted small">Reglemente, Ausschreibungen, Zeitpläne, Ergebnisse und weitere Dateien für Teilnehmer.</p></div></div>
         <div className="filter-grid"><label><span className="small">Kategorie</span><select value={documentFilterCategory} onChange={(e)=>setDocumentFilterCategory(e.target.value)}><option>Alle Kategorien</option>{documentCategories.map((item)=><option key={item}>{item}</option>)}</select></label><label><span className="small">Rennen</span><select value={documentFilterRace} onChange={(e)=>setDocumentFilterRace(e.target.value)}><option>Alle Rennen</option>{races.map((race)=><option key={race}>{race}</option>)}</select></label><label className="full"><span className="small">Suche</span><div className="searchwrap"><Search className="searchicon" size={16} /><input value={documentSearch} onChange={(e)=>setDocumentSearch(e.target.value)} placeholder="Titel, Datei, Kategorie" /></div></label></div>

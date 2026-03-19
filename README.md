@@ -26,3 +26,6 @@ VITE_SUPABASE_ANON_KEY=dein_anon_key
 1. `supabase/schema.sql` im SQL Editor ausführen
 2. Prüfen, dass der Storage Bucket `documents` existiert
 3. Admin in Supabase Auth anlegen
+
+- Mojo D5 Reifenbestellung pro Lauf
+- Bestätigungsmail über die konfigurierte Mail-Function

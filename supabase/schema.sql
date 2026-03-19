@@ -58,3 +58,31 @@ drop policy if exists "Auth delete documents storage" on storage.objects;
 create policy "Public read documents storage" on storage.objects for select to public using (bucket_id = 'documents');
 create policy "Auth upload documents storage" on storage.objects for insert to anon, authenticated with check (bucket_id = 'documents');
 create policy "Auth delete documents storage" on storage.objects for delete to anon, authenticated using (bucket_id = 'documents');
+
+
+create table if not exists public.tire_orders (
+  id uuid primary key default gen_random_uuid(),
+  race text not null,
+  first_name text not null,
+  last_name text not null,
+  email text not null,
+  quantity integer not null check (quantity >= 1 and quantity <= 10),
+  created_at timestamptz not null default now()
+);
+
+alter table public.tire_orders enable row level security;
+
+drop policy if exists "allow read tire orders" on public.tire_orders;
+drop policy if exists "allow insert tire orders" on public.tire_orders;
+
+create policy "allow read tire orders"
+on public.tire_orders
+for select
+to anon, authenticated
+using (true);
+
+create policy "allow insert tire orders"
+on public.tire_orders
+for insert
+to anon, authenticated
+with check (true);
