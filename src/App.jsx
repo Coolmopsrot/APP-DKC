@@ -26,6 +26,20 @@ const emptyDocumentForm = { title: "", category: documentCategories[0], race: "A
 
 function numericKart(value){ const n = Number(String(value).replace(/[^\d]/g,"")); return Number.isNaN(n) ? null : n; }
 function sortByKart(data){ return [...data].sort((a,b)=>{ const aNum=numericKart(a.kartNumber); const bNum=numericKart(b.kartNumber); if(aNum!==null&&bNum!==null&&aNum!==bNum) return aNum-bNum; return String(a.kartNumber).localeCompare(String(b.kartNumber),"de");});}
+function exportToCsv(rows){
+}
+function exportTireCsv(rows){
+  const header=["Lauf","Vorname","Nachname","Email","Menge"];
+  const csv=[header,...rows.map(r=>[r.race,r.firstName,r.lastName,r.email,r.quantity])];
+  const content=csv.map(r=>r.join(";")).join("\n");
+  const blob=new Blob([content],{type:"text/csv"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;
+  a.download="Reifenbestellungen.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+}
 function exportToCsv(rows){ const csvHeader=["Rennen","Vorname","Nachname","Kartnummer","Teamname","Klasse","Status","E-Mail","Registriert am"]; const csvRows=rows.map((item)=>[item.race,item.firstName,item.lastName,item.kartNumber,item.teamName,item.kartClass,item.status,item.email||"",item.createdAt?new Date(item.createdAt).toLocaleString("de-DE"):""]); const content=[csvHeader,...csvRows].map((row)=>row.map((cell)=>`"${String(cell).replace(/"/g,'""')}"`).join(";")).join("\n"); const blob=new Blob([content],{type:"text/csv;charset=utf-8;"}); const url=URL.createObjectURL(blob); const link=document.createElement("a"); link.href=url; link.download="DKC-Starterliste.csv"; link.click(); URL.revokeObjectURL(url);}
 async function getSupabaseClient(){ const url=import.meta.env.VITE_SUPABASE_URL; const anonKey=import.meta.env.VITE_SUPABASE_ANON_KEY; if(!url||!anonKey) return null; const { createClient } = await import("@supabase/supabase-js"); return createClient(url, anonKey);}
 
@@ -254,6 +268,8 @@ export default function App(){
   const filteredRegistrations=useMemo(()=>sortByKart(registrations.filter((entry)=>{ const matchesRace=selectedRace==="Alle Rennen"||entry.race===selectedRace; const matchesClass=selectedClass==="Alle Klassen"||entry.kartClass===selectedClass; const matchesStatus=statusFilter==="Alle Status"||entry.status===statusFilter; const query=search.toLowerCase(); const matchesSearch=!query||`${entry.firstName} ${entry.lastName}`.toLowerCase().includes(query)||entry.teamName.toLowerCase().includes(query)||entry.kartNumber.toLowerCase().includes(query); return matchesRace&&matchesClass&&matchesStatus&&matchesSearch; })),[registrations,selectedRace,selectedClass,statusFilter,search]);
   const filteredDocuments=useMemo(()=>documents.filter((doc)=>{ const matchesCategory=documentFilterCategory==="Alle Kategorien"||doc.category===documentFilterCategory; const matchesRace=documentFilterRace==="Alle Rennen"||doc.race===documentFilterRace; const query=documentSearch.toLowerCase(); const matchesSearch=!query||doc.title.toLowerCase().includes(query)||doc.fileName.toLowerCase().includes(query)||doc.category.toLowerCase().includes(query); return matchesCategory&&matchesRace&&matchesSearch; }),[documents,documentFilterCategory,documentFilterRace,documentSearch]);
   const filteredTireOrders=useMemo(()=>tireOrders.filter((item)=>{ const matchesRace=selectedRace==="Alle Rennen"||item.race===selectedRace; const query=search.toLowerCase(); const matchesSearch=!query||`${item.firstName} ${item.lastName}`.toLowerCase().includes(query)||String(item.quantity).includes(query); return matchesRace&&matchesSearch; }),[tireOrders,selectedRace,search]);
+  const tireTotalsByRace=useMemo(()=>races.map((race)=>({ race, total: tireOrders.filter((item)=>item.race===race).reduce((sum,item)=>sum+Number(item.quantity||0),0), orders: tireOrders.filter((item)=>item.race===race).length })),[tireOrders]);
+  const visibleTireTotal=useMemo(()=>filteredTireOrders.reduce((sum,item)=>sum+Number(item.quantity||0),0),[filteredTireOrders]);
   const stats=useMemo(()=>({ total:registrations.length, confirmed:registrations.filter((r)=>r.status==="Bestätigt").length, open:registrations.filter((r)=>r.status==="Offen").length, classesCount:new Set(registrations.map((r)=>r.kartClass)).size }),[registrations]);
   const raceStats=useMemo(()=>races.map((race)=>({ race, count:registrations.filter((r)=>r.race===race).length })),[registrations]);
   const classStats=useMemo(()=>classes.map((item)=>({ name:item, count:registrations.filter((r)=>r.kartClass===item).length })).filter((item)=>item.count>0).sort((a,b)=>b.count-a.count),[registrations]);
@@ -366,7 +382,7 @@ export default function App(){
         </div>
 
         {adminLoggedIn&&<div className="card">
-          <div className="toolbar"><div><div className="section-title"><ShoppingCart size={18} color="#facc15" /> Reifenbestellungen Übersicht</div><p className="muted small">Alle Bestellungen pro Lauf für den Admin.</p></div></div>
+          <div className="toolbar"><div><div className="section-title"><ShoppingCart size={18} color="#facc15" /> Reifenbestellungen Übersicht</div><button onClick={()=>exportTireCsv(filteredTireOrders)} className="btn redbtn">Export CSV</button><div></div><p className="muted small">Alle Bestellungen pro Lauf für den Admin.</p></div></div>
           <div className="stack">
             {filteredTireOrders.map((item)=><div key={item.id} className="entry-card"><div className="row entry-top"><div><div className="entry-name">{item.firstName} {item.lastName}</div><div className="muted small">{item.race}</div></div><div className="badges"><span className="pill gold">{item.quantity} x Mojo D5</span></div></div><div className="detail-grid small"><div>E-Mail: <strong>{item.email}</strong></div><div>Bestellt: <strong>{item.createdAt?new Date(item.createdAt).toLocaleString("de-DE"):"-"}</strong></div></div></div>)}
             {filteredTireOrders.length===0&&<div className="emptybox">Keine Reifenbestellungen vorhanden.</div>}
