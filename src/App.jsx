@@ -42,6 +42,41 @@ function exportTireCsv(rows){
   URL.revokeObjectURL(url);
 }
 
+async function sendRegistrationMail(payload){
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  if(!supabaseUrl || !anonKey) return { ok:false, error:"Supabase nicht konfiguriert" };
+
+  try{
+    const response = await fetch(`${supabaseUrl}/functions/v1/smart-worker`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${anonKey}`,
+        "apikey": anonKey,
+      },
+      body: JSON.stringify({
+        type: "registration",
+        email: payload.email,
+        firstName: payload.firstName,
+        lastName: payload.lastName,
+        race: payload.race,
+        kartNumber: payload.kartNumber,
+        teamName: payload.teamName,
+        kartClass: payload.kartClass,
+      }),
+    });
+
+    if(!response.ok){
+      const text = await response.text();
+      return { ok:false, error:text || `HTTP ${response.status}` };
+    }
+    return { ok:true };
+  }catch(error){
+    return { ok:false, error:String(error) };
+  }
+}
+
 async function getSupabaseClient(){ const url=import.meta.env.VITE_SUPABASE_URL; const anonKey=import.meta.env.VITE_SUPABASE_ANON_KEY; if(!url||!anonKey) return null; const { createClient } = await import("@supabase/supabase-js"); return createClient(url, anonKey);}
 
 async function sendTireOrderMail(payload){
@@ -161,7 +196,21 @@ export default function App(){
       }
       const payload={ race:form.race.trim(), first_name:form.firstName.trim(), last_name:form.lastName.trim(), email:form.email.trim(), kart_number:form.kartNumber.trim(), team_name:form.teamName.trim(), kart_class:form.kartClass.trim(), status:"Bestätigt" };
       const { error }=await supabase.from("registrations").insert(payload); if(error) throw error;
-      setFormNotice("Registrierung erfolgreich gespeichert."); setForm(emptyForm); await loadAllData(); setTab("dashboard");
+      const mailResult = await sendRegistrationMail({
+        email: form.email.trim(),
+        firstName: form.firstName.trim(),
+        lastName: form.lastName.trim(),
+        race: form.race.trim(),
+        kartNumber: form.kartNumber.trim(),
+        teamName: form.teamName.trim(),
+        kartClass: form.kartClass.trim(),
+      });
+
+      setFormNotice(
+        mailResult.ok
+          ? "Registrierung erfolgreich gespeichert. Die Bestätigungsmail wurde versendet."
+          : "Registrierung erfolgreich gespeichert. Die Bestätigungsmail konnte aktuell nicht versendet werden."
+      ); setForm(emptyForm); await loadAllData(); setTab("dashboard");
     }catch(err){ setFormError(err?.message||"Registrierung konnte nicht gespeichert werden."); }finally{ setIsSubmitting(false); }
   }
 

@@ -34,3 +34,5 @@ VITE_SUPABASE_ANON_KEY=dein_anon_key
 
 - Quantity-Fix für Reifen-Mail enthalten
 - smart-worker Vorlage mit getrennten Profi-Mails enthalten
+
+- Registrierungs-Mail-Fix enthalten
