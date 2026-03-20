@@ -58,13 +58,12 @@ async function sendTireOrderMail(payload){
         "apikey": anonKey,
       },
       body: JSON.stringify({
+        type: payload.type,
         email: payload.email,
         firstName: payload.firstName,
         lastName: payload.lastName,
         race: payload.race,
-        kartNumber: "-",
-        teamName: `Reifenbestellung: ${payload.quantity} x Mojo D5`,
-        kartClass: "Mojo D5 Reifenbestellung",
+        quantity: Number(payload.quantity),
       }),
     });
 
@@ -162,21 +161,7 @@ export default function App(){
       }
       const payload={ race:form.race.trim(), first_name:form.firstName.trim(), last_name:form.lastName.trim(), email:form.email.trim(), kart_number:form.kartNumber.trim(), team_name:form.teamName.trim(), kart_class:form.kartClass.trim(), status:"Bestätigt" };
       const { error }=await supabase.from("registrations").insert(payload); if(error) throw error;
-      const mailResult = await sendRegistrationMail({
-  race: form.race,
-  firstName: form.firstName,
-  lastName: form.lastName,
-  email: form.email,
-  kartNumber: form.kartNumber,
-  teamName: form.teamName,
-  kartClass: form.kartClass,
-});
-
-setFormNotice(
-  mailResult.ok
-    ? "Registrierung erfolgreich + Mail gesendet"
-    : "Registrierung ok, Mail fehlgeschlagen"
-); setForm(emptyForm); await loadAllData(); setTab("dashboard");
+      setFormNotice("Registrierung erfolgreich gespeichert."); setForm(emptyForm); await loadAllData(); setTab("dashboard");
     }catch(err){ setFormError(err?.message||"Registrierung konnte nicht gespeichert werden."); }finally{ setIsSubmitting(false); }
   }
 
@@ -253,11 +238,12 @@ setFormNotice(
       if(error) throw error;
 
       const mailResult = await sendTireOrderMail({
+        type: "tires",
         race: tireForm.race,
         firstName: tireForm.firstName.trim(),
         lastName: tireForm.lastName.trim(),
         email: tireForm.email.trim(),
-        quantity,
+        quantity: Number(quantity),
       });
 
       setTireForm(emptyTireForm);
