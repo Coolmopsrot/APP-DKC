@@ -58,12 +58,13 @@ async function sendTireOrderMail(payload){
         "apikey": anonKey,
       },
       body: JSON.stringify({
-        type: payload.type,
         email: payload.email,
         firstName: payload.firstName,
         lastName: payload.lastName,
         race: payload.race,
-        quantity: Number(payload.quantity),
+        kartNumber: "-",
+        teamName: `Reifenbestellung: ${payload.quantity} x Mojo D5`,
+        kartClass: "Mojo D5 Reifenbestellung",
       }),
     });
 
@@ -161,7 +162,21 @@ export default function App(){
       }
       const payload={ race:form.race.trim(), first_name:form.firstName.trim(), last_name:form.lastName.trim(), email:form.email.trim(), kart_number:form.kartNumber.trim(), team_name:form.teamName.trim(), kart_class:form.kartClass.trim(), status:"Bestätigt" };
       const { error }=await supabase.from("registrations").insert(payload); if(error) throw error;
-      setFormNotice("Registrierung erfolgreich gespeichert."); setForm(emptyForm); await loadAllData(); setTab("dashboard");
+      const mailResult = await sendRegistrationMail({
+  race: form.race,
+  firstName: form.firstName,
+  lastName: form.lastName,
+  email: form.email,
+  kartNumber: form.kartNumber,
+  teamName: form.teamName,
+  kartClass: form.kartClass,
+});
+
+setFormNotice(
+  mailResult.ok
+    ? "Registrierung erfolgreich + Mail gesendet"
+    : "Registrierung ok, Mail fehlgeschlagen"
+); setForm(emptyForm); await loadAllData(); setTab("dashboard");
     }catch(err){ setFormError(err?.message||"Registrierung konnte nicht gespeichert werden."); }finally{ setIsSubmitting(false); }
   }
 
@@ -238,12 +253,11 @@ export default function App(){
       if(error) throw error;
 
       const mailResult = await sendTireOrderMail({
-        type: "tires",
         race: tireForm.race,
         firstName: tireForm.firstName.trim(),
         lastName: tireForm.lastName.trim(),
         email: tireForm.email.trim(),
-        quantity: Number(quantity),
+        quantity,
       });
 
       setTireForm(emptyTireForm);
@@ -369,8 +383,7 @@ export default function App(){
   return (
     <div className="page"><div className="container space-y-6">
       <motion.div initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} className="hero-grid">
-   <div className="card"><div className="badges"><span className="pill red">DKC 2026</span><span className="pill gold">Live App Komplett</span><span className="pill dark">{sourceLabel}</span></div><div className="hero-content"><img className="hero-logo" src="/dkc-logo.png" alt="DKC Logo" /><div><h1>Deutsche Kartchallenge</h1></div></div></div>
-
+        <div className="card"><div className="badges"><span className="pill red">DKC 2026</span><span className="pill gold">Live App Komplett</span><span className="pill dark">{sourceLabel}</span></div><div className="hero-content"><img className="hero-logo" src="/dkc-logo.png" alt="DKC Logo" /><div><h1>Deutsche Kartchallenge</h1><p className="muted">Komplette Live-Version mit Registrierung, Dashboard, Admin Pro und Dokumentenbereich.</p></div></div></div>
         <div className="card"><div className="section-title"><ShieldCheck size={18} color="#facc15" /> Live Status</div><div className="stack"><div className="rowbox"><span><Database size={16} color="#ef4444" /> Datenquelle</span><strong>{sourceLabel}</strong></div><button onClick={loadAllData} className="rowbtn"><span><RefreshCw size={16} color="#facc15" /> Daten neu laden</span><span className="muted">{isLoading?"lädt...":"jetzt"}</span></button><div className="rowbox">{adminLoggedIn?"Admin eingeloggt":"Admin nicht eingeloggt"}</div></div></div>
       </motion.div>
 

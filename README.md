@@ -31,6 +31,3 @@ VITE_SUPABASE_ANON_KEY=dein_anon_key
 - Bestätigungsmail über die konfigurierte Mail-Function
 
 - Mail-Fix für Reifenbestellung über direkte Edge-Function `smart-worker`
-
-- Quantity-Fix für Reifen-Mail enthalten
-- smart-worker Vorlage mit getrennten Profi-Mails enthalten
