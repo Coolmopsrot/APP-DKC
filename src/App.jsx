@@ -4,6 +4,14 @@ import { motion } from "framer-motion";
 import { Trophy, Users, Gauge, Filter, CalendarDays, Download, ShieldCheck, Search, BarChart3, Database, RefreshCw, ClipboardCheck, LayoutDashboard, Lock, LogOut, Pencil, Trash2, Save, X, BadgeCheck, FolderOpen, Upload, FileText, ShoppingCart } from "lucide-react";
 
 const races = ["1. Lauf – 26.04.26 – Lohsa","2. Lauf – 17.05.26 – Belleben","3. Lauf – 21.06.26 – Mülsen","4. Lauf – 13.09.26 – Nachtrennen Belleben","5. Lauf – 27.09.26 – Cheb","6. Lauf – 11.10.26 – Wallrav"];
+
+const tireRaces = [
+  "1. Lauf – 26.04.26 – Lohsa",
+  "2. Lauf – 17.05.26 – Belleben",
+  "4. Lauf – 13.09.26 – Nachtrennen Belleben",
+  "5. Lauf – 27.09.26 – Cheb",
+  "6. Lauf – 11.10.26 – Wallrav"
+];
 const classes = ["Rotax Senior","Rotax Junior","Rotax Mini","Rotax Micro","Rotax DD2","Rotax DD2 Master","Rotax DD2 Trophy","FUN Klasse"];
 const statusOptions = ["Bestätigt","Offen","Bezahlt","Abgemeldet"];
 const documentCategories = ["Reglement","Ausschreibung","Zeitplan","Ergebnisse","Starterliste","Downloads","Sonstiges"];
@@ -459,7 +467,7 @@ export default function App(){
             <div className="card"><div className="section-title"><CalendarDays size={18} color="#facc15" /> Rennen im Überblick</div><div className="stack">{raceStats.map((item)=><div key={item.race} className="rowbox"><div className="small">{item.race}</div><span className="pill red">{item.count}</span></div>)}</div></div>
             <div className="card"><div className="section-title"><BarChart3 size={18} color="#ef4444" /> Klassenverteilung</div><div className="stack">{classStats.map((item)=><div key={item.name}><div className="row small"><span>{item.name}</span><strong style={{color:"#facc15"}}>{item.count}</strong></div><div className="bar"><div className="barfill" style={{width:stats.total?`${(item.count/stats.total)*100}%`:"0%"}} /></div></div>)}</div></div>
           </div>
-          <div className="card"><div className="toolbar"><div><div className="section-title"><Filter size={18} color="#facc15" /> Starterübersicht</div><p className="muted small">Filtern und durchsuchen.</p></div></div>
+          <div className="card"><div className="toolbar"><div><div className="section-title"><Filter size={18} color="#facc15" /> Starterübersicht</div><p className="muted small">Filtern, durchsuchen und als Datei exportieren.</p></div><button onClick={()=>exportToCsv(filteredRegistrations)} className="btn redbtn"><Download size={16} /> Export CSV</button></div>
             <div className="filter-grid">
               <label><span className="small">Rennen</span><select value={selectedRace} onChange={(e)=>setSelectedRace(e.target.value)}><option>Alle Rennen</option>{races.map((race)=><option key={race}>{race}</option>)}</select></label>
               <label><span className="small">Klasse</span><select value={selectedClass} onChange={(e)=>setSelectedClass(e.target.value)}><option>Alle Klassen</option>{classes.map((item)=><option key={item}>{item}</option>)}</select></label>
@@ -505,7 +513,7 @@ export default function App(){
           <div className="card">
             <div className="section-title"><ShoppingCart size={18} color="#facc15" /> Mojo D5 Reifenbestellung</div>
             <form onSubmit={submitTireOrder} className="form-grid">
-              <label><span className="small">Lauf</span><select value={tireForm.race} onChange={(e)=>handleTireField("race",e.target.value)}>{races.map((race)=><option key={race} value={race}>{race}</option>)}</select></label>
+              <label><span className="small">Lauf</span><select value={tireForm.race} onChange={(e)=>handleTireField("race",e.target.value)}>{tireRaces.map((race)=><option key={race} value={race}>{race}</option>)}</select></label>
               <label><span className="small">Anzahl Mojo D5 Reifensätze</span><input type="number" min="1" max="10" value={tireForm.quantity} onChange={(e)=>handleTireField("quantity",e.target.value)} /></label>
               <label><span className="small">Vorname</span><input value={tireForm.firstName} onChange={(e)=>handleTireField("firstName",e.target.value)} /></label>
               <label><span className="small">Nachname</span><input value={tireForm.lastName} onChange={(e)=>handleTireField("lastName",e.target.value)} /></label>
