@@ -1,38 +1,18 @@
-# DKC Live Komplett
+# DKC Race Control
 
-## Enthalten
-- Gaststarter Registrierung
-- Live Dashboard
-- Admin Pro Login
-- Starter bearbeiten / löschen / Status ändern
-- Öffentliche Dokumente-Seite
-- Admin Dokumente hochladen / löschen
-- Supabase Storage Bucket `documents`
-- DKC Logo
+Mobile Saisoneinschreibung und Gaststarts, Veranstaltungsverwaltung, Teilnehmerlisten, technische Abnahme, Reifenbestellungen und PDF-Unterlagen.
 
-## Demo Admin Login
-admin@dkc.de
-DKC2026!
+## Betrieb
+- Frontend: React/Vite auf IONOS Deploy Now
+- Backend: Supabase Edge Function `dkc-control`, geschützte `dkc_*` Tabellen und privater PDF-Bucket
+- Fahrerportal: `/?view=register`
+- Verwaltung: `/?view=admin` (bestätigtes Supabase-Konto mit DKC-Rolle)
+- Reifen: `/?view=tyres`; Dokumente: `/?view=documents`
 
-## Für IONOS
-Build Command: npm run build
-Output Directory: dist
+## Entwicklung
+`npm install`, `npm test`, `npm run build`
 
-## Supabase Variablen
-VITE_SUPABASE_URL=https://deinprojekt.supabase.co
-VITE_SUPABASE_ANON_KEY=dein_anon_key
+Nur VITE_SUPABASE_URL und VITE_SUPABASE_ANON_KEY gehören in die Frontend-Konfiguration. Service-Role-Schlüssel und SMTP-Zugangsdaten bleiben ausschließlich im Backend.
 
-## Einrichtung
-1. `supabase/schema.sql` im SQL Editor ausführen
-2. Prüfen, dass der Storage Bucket `documents` existiert
-3. Admin in Supabase Auth anlegen
-
-- Mojo D5 Reifenbestellung pro Lauf
-- Bestätigungsmail über die konfigurierte Mail-Function
-
-- Mail-Fix für Reifenbestellung über direkte Edge-Function `smart-worker`
-
-- Quantity-Fix für Reifen-Mail enthalten
-- smart-worker Vorlage mit getrennten Profi-Mails enthalten
-
-- Registrierungs-Mail-Fix enthalten
+## Testbetrieb
+Die Veranstaltung TEST – DKC Funktionsprüfung ist kein echter Renntermin. Test-Gastanmeldungen und Test-Reifenbestellungen versenden keine E-Mails. Bestehende 2026-Daten bleiben in ihren ursprünglichen Tabellen erhalten.

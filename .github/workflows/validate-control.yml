@@ -7,23 +7,19 @@ jobs:
   check:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
+      checks: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: npm install
+      - run: npm ci
       - run: npm test
       - run: npm run build
       - run: node scripts/test-api.mjs
-      - name: Preserve dependency lock on test branch
-        if: github.ref == 'refs/heads/dkc-control-test'
+      - name: Read IONOS deployment diagnostic
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          if ! git diff --quiet -- package-lock.json || ! git ls-files --error-unmatch package-lock.json >/dev/null 2>&1; then
-            git config user.name 'github-actions[bot]'
-            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            git add package-lock.json
-            git commit -m 'Pin tested DKC dependencies'
-            git push
-          fi
+          gh api repos/Coolmopsrot/APP-DKC/check-suites/119869013204/check-runs --jq '.check_runs[] | {name, conclusion, output}' || true
