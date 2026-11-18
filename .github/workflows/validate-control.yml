@@ -1,0 +1,29 @@
+name: DKC Race Control checks
+on:
+  push:
+    branches: [dkc-control-test, main]
+  workflow_dispatch:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install
+      - run: npm test
+      - run: npm run build
+      - run: node scripts/test-api.mjs
+      - name: Preserve dependency lock on test branch
+        if: github.ref == 'refs/heads/dkc-control-test'
+        run: |
+          if ! git diff --quiet -- package-lock.json || ! git ls-files --error-unmatch package-lock.json >/dev/null 2>&1; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add package-lock.json
+            git commit -m 'Pin tested DKC dependencies'
+            git push
+          fi

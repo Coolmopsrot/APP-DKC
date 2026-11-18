@@ -1,0 +1,8 @@
+export const CLASSES=['Rotax Micro','Rotax Mini','Rotax Junior','Rotax Senior','Rotax DD2','DD2 Master','DD2 Trophy','FUN'];
+export const CHECKS=['Fahrer / Startnummer','Persönliche Schutzausrüstung','Chassis / Sicherheit','Motor / Plombe','Reifen / Felgen','Transponder'];
+export function text(v,max=160){const s=String(v??'').trim();if(s.length>max)throw Error('Eingabe zu lang.');return s;}
+export function number(v){if(!/^\d{1,4}$/.test(String(v)))throw Error('Startnummer muss aus 1–4 Ziffern bestehen.');return String(Number(v));}
+export function person(p){const d={first:text(p.first),last:text(p.last),email:text(p.email).toLowerCase(),phone:text(p.phone),team:text(p.team),klasse:text(p.klasse),number:number(p.number)};if(!d.first||!d.last||!d.phone||!/^\S+@\S+\.\S+$/.test(d.email)||!CLASSES.includes(d.klasse)||p.consent!==true)throw Error('Pflichtfelder und Zustimmung prüfen.');return d;}
+export function inspection(p){if(!['offen','bestanden','nachkontrolle'].includes(p.status)||!Array.isArray(p.checks)||p.checks.some(c=>!CHECKS.includes(c))||new Set(p.checks).size!==p.checks.length)throw Error('Ungültige Prüfung.');if(p.status==='bestanden'&&CHECKS.some(c=>!p.checks.includes(c)))throw Error('Bitte alle Prüfpunkte bestätigen.');return {status:p.status,checks:JSON.stringify(p.checks),notes:text(p.notes,2000)};}
+export function quantity(v){if(!Number.isInteger(v)||v<1||v>50)throw Error('Menge muss zwischen 1 und 50 liegen.');return v;}
+export function date(v){if(!/^\d{4}-\d{2}-\d{2}$/.test(v)||Number.isNaN(Date.parse(v))||new Date(v).toISOString().slice(0,10)!==v)throw Error('Ungültiges Datum.');return v;}
