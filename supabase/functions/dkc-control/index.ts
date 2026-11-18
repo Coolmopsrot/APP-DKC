@@ -29,6 +29,16 @@ Deno.serve(async(req:Request)=>{
  const u=await user(req);admin(u);if(Number(req.headers.get('content-length')||0)>16*1024*1024)throw Error('Maximal 15 MB erlaubt.');const f=await req.formData(),file=f.get('file');if(!(file instanceof File)||file.size>15*1024*1024||file.size<5)throw Error('PDF bis maximal 15 MB auswählen.');if(new TextDecoder().decode(await file.slice(0,5).arrayBuffer())!=='%PDF-')throw Error('Datei ist kein PDF.');const season=text(f.get('season'),4),eventId=text(f.get('eventId'));if(!/^\d{4}$/.test(season))throw Error('Saison prüfen.');if(eventId&&(await one('events',eventId)).season!==season)throw Error('Saison passt nicht zur Veranstaltung.');const title=text(f.get('title')),category=text(f.get('category'));if(!title||!category)throw Error('Titel und Kategorie fehlen.');const id=crypto.randomUUID(),file_path=id+'.pdf';const upload=await db.storage.from('dkc-control-documents').upload(file_path,file,{contentType:'application/pdf'});if(upload.error)throw Error('Upload fehlgeschlagen.');try{await result(table('documents').insert({id,title,category,season,event_id:eventId||null,published:f.get('published')==='on',file_path,size:file.size}));}catch(e){await db.storage.from('dkc-control-documents').remove([file_path]);throw e;}await audit(u.email,'document');return json({ok:true,id});}
  if(req.method!=='POST')return json({error:'Nicht gefunden.'},404);
  const raw=await req.text();if(raw.length>20000)return json({error:'Anfrage zu groß.'},413);const p=JSON.parse(raw);
+ if(path==='/login'){
+ const ip=req.headers.get('x-forwarded-for')?.split(',')[0]||'unknown';const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode('login:'+ip)))).map(x=>x.toString(16).padStart(2,'0')).join('');if(!await result(db.rpc('dkc_rate_check',{p_key:hash})))return json({error:'Zu viele Anmeldeversuche. Bitte später erneut versuchen.'},429);
+ const login=text(p.login).toLowerCase();let email=login;
+ if(!login.includes('@')){const alias=await result(table('members').select('email').eq('username',login).maybeSingle());email=alias?.email||'invalid-login@example.invalid';}
+ const auth=createClient(Deno.env.get('SUPABASE_URL')!,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,{auth:{persistSession:false,autoRefreshToken:false}});
+ const {data,error}=await auth.auth.signInWithPassword({email,password:typeof p.password==='string'?p.password:''});
+ if(error||!data.session||!data.user?.email_confirmed_at)return json({error:'Anmeldung fehlgeschlagen.'},401);
+ const member=await result(table('members').select('role').eq('email',email).maybeSingle());if(!member)return json({error:'Kein DKC-Zugang für dieses Konto.'},403);
+ return json({session:{access_token:data.session.access_token,refresh_token:data.session.refresh_token}});
+ }
  if(path==='/register'||path==='/tyre-order'){
  const d=person(p);const ip=req.headers.get('x-forwarded-for')?.split(',')[0]||'unknown';const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(ip)))).map(x=>x.toString(16).padStart(2,'0')).join('');const allowed=await result(db.rpc('dkc_rate_check',{p_key:hash}));if(!allowed)return json({error:'Zu viele Anfragen. Bitte in 10 Minuten erneut versuchen.'},429);
  if(path==='/register'){
@@ -44,7 +54,13 @@ Deno.serve(async(req:Request)=>{
  else if(p.action==='add'){const e=await one('events',p.eventId),d=await one('drivers',p.driverId);if(d.season!==e.season||(d.kind==='guest'&&d.event_id!==e.id))throw Error('Fahrer passt nicht zum Rennen.');await result(table('entries').insert({event_id:e.id,driver_id:d.id,number:number(p.number),transponder:text(p.transponder)}));}
  else if(p.action==='editEntry'){await update('entries',p.id,{number:number(p.number),transponder:text(p.transponder),version:p.version+1},p.version);}
  else if(p.action==='remove')await result(table('entries').delete().eq('id',p.id));
- else if(p.action==='member'){const email=text(p.email).toLowerCase();if(!/^\S+@\S+\.\S+$/.test(email)||!['admin','technical'].includes(p.role))throw Error('E-Mail / Rolle prüfen.');if(email===u.email)throw Error('Eigene Rolle kann nicht verändert werden.');await result(table('members').upsert({email,role:p.role}));}
+ else if(p.action==='member'){
+ const email=text(p.email).toLowerCase();if(!/^\S+@\S+\.\S+$/.test(email)||!['admin','technical'].includes(p.role))throw Error('E-Mail / Rolle prüfen.');if(email===u.email)throw Error('Eigene Rolle kann nicht verändert werden.');
+ const password=typeof p.password==='string'?p.password:'';let createdId:string|undefined;
+ if(password){if(password.length<12||password.length>128)throw Error('Kennwort muss 12 bis 128 Zeichen lang sein.');const {data,error}=await db.auth.admin.createUser({email,password,email_confirm:true});if(error)throw Error('Konto konnte nicht angelegt werden. Falls es bereits existiert, Kennwortfeld leer lassen.');createdId=data.user.id;}
+ else {const exists=await result(db.rpc('dkc_confirmed_user_exists',{p_email:email}));if(!exists)throw Error('Für ein neues Konto bitte ein Kennwort eingeben.');}
+ try{await result(table('members').upsert({email,role:p.role}));}catch(e){if(createdId)await db.auth.admin.deleteUser(createdId);throw e;}
+ }
  else throw Error('Unbekannte Aktion.');}
  }else if(path==='/features'){admin(u);
  if(p.action==='offer'){await one('events',p.eventId);const price=p.priceCents;if(!Number.isInteger(price)||price<1||price>1000000)throw Error('Preis prüfen.');const values={event_id:p.eventId,name:text(p.name),price_cents:price,deadline:p.deadline?date(p.deadline):null,note:text(p.note,1000),open:p.open===true};if(!values.name)throw Error('Bezeichnung fehlt.');if(p.id){const old=await one('offers',p.id);if(old.event_id!==p.eventId)throw Error('Rennen darf nicht geändert werden.');await update('offers',p.id,values);}else await result(table('offers').insert(values));}
