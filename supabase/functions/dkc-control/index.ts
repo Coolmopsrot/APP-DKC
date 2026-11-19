@@ -58,6 +58,16 @@ Deno.serve(async(req:Request)=>{
  else {admin(u);
  if(p.action==='event'){const values={title:text(p.title,150),location:text(p.location,150),date:date(p.date),season:p.date.slice(0,4),open:p.open===true};if(!values.title||!values.location)throw Error('Name und Ort fehlen.');if(p.id){const old=await one('events',p.id);if(old.season!==values.season)throw Error('Saison bestehender Rennen nicht ändern. Neues Rennen anlegen.');await update('events',p.id,values);}else await result(table('events').insert(values));}
  else if(p.action==='add'){const e=await one('events',p.eventId),d=await one('drivers',p.driverId);if(d.season!==e.season||(d.kind==='guest'&&d.event_id!==e.id))throw Error('Fahrer passt nicht zum Rennen.');await result(table('entries').insert({event_id:e.id,driver_id:d.id,number:number(p.number),transponder:text(p.transponder)}));}
+ else if(p.action==='editDriver'){
+ const fields=person({...p,consent:true});
+ await update('drivers',p.id,{...fields,transponder:text(p.transponder)});
+ }
+ else if(p.action==='deleteDriver'){
+ const {data,error}=await table('drivers').delete().eq('id',p.id).select('id');
+ if(error?.code==='23503')throw Error('Bitte zuerst die Rennteilnahmen dieses Fahrers entfernen.');
+ if(error)throw Error('Einschreibung konnte nicht gelöscht werden.');
+ if(!data.length)throw Error('Einschreibung nicht gefunden.');
+ }
  else if(p.action==='editEntry'){await update('entries',p.id,{number:number(p.number),transponder:text(p.transponder),version:p.version+1},p.version);}
  else if(p.action==='remove')await result(table('entries').delete().eq('id',p.id));
  else if(p.action==='member'){
